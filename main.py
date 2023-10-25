@@ -38,6 +38,15 @@ def printhistogramas2(imcp,imca):
     plt.ylabel('Frequência')  
     plt.title('Histograma do IMC com ausencia de doenca cardiovascular')  
     plt.show() 
+    
+def graficodispersao(dado1,dado2):
+    plt.scatter(dado1,dado2,alpha=0.5,marker='o')        #olhar pra fazer esse grafico logaritimo
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Pressao diastolica (escala log)')
+    plt.ylabel('Pressao sistolica (escala log)')
+    plt.title('Grafico de dispersao" Diastolica x sistolica')
+    plt.show()
 age, gender, height, weight, ap_hi, ap_lo, cholesterol, gluc, smoke, alco, active, cardio, imc, imcF, imcM, imcp, imca = ([] for _ in range(17))
 
 
@@ -84,8 +93,4 @@ for i, weight_value in enumerate(weight):
 
 #printhistogramas1(imc,imcF,imcM)
 #printhistogramas2(imcp,imca)
-
-plt.scatter(ap_lo,ap_hi)        #olhar pra fazer esse grafico logaritimo
-#plt.xlim(0,300)
-#plt.ylim(0,300)
-plt.show()
+graficodispersao(ap_lo,ap_hi)
