@@ -82,6 +82,10 @@ for i, weight_value in enumerate(weight):
         imcp.append((weight_value) / ((height[i]/100) ** 2))
     
 
-printhistogramas1(imc,imcF,imcM)
-printhistogramas2(imcp,imca)
+#printhistogramas1(imc,imcF,imcM)
+#printhistogramas2(imcp,imca)
 
+plt.scatter(ap_lo,ap_hi)        #olhar pra fazer esse grafico logaritimo
+#plt.xlim(0,300)
+#plt.ylim(0,300)
+plt.show()
