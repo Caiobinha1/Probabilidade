@@ -39,7 +39,7 @@ mediaaltura = np.mean(height)
 mediapeso = np.mean(weight)
 
 for i, height_value in enumerate(height):
-    if height_value / mediaaltura > 1.8 or height_value / mediaaltura < 0.5:
+    if height_value / mediaaltura > 1.8 or height_value / mediaaltura < 0.5:    #checar a idade, pq cada idade tem uma media diferentes
         print(height_value, "Está fora do normal para altura.")
     if gender[i] == 1:
         imcF.append((weight[i]) / ((height_value/100) ** 2))
@@ -55,9 +55,9 @@ for i, weight_value in enumerate(weight):
     else:
         imcp.append((weight_value) / ((height[i]/100) ** 2))
 
-plot_histogram(imc, 'Histograma do IMC total')
-plot_histogram(imcF, 'Histograma do IMC Feminino')
-plot_histogram(imcM, 'Histograma do IMC Masculino')
-plot_histogram(imcp, 'Histograma do IMC com doenca cardiovascular')
-plot_histogram(imca, 'Histograma do IMC sem doenca cardiovascular')
+#plot_histogram(imc, 'Histograma do IMC total')
+#plot_histogram(imcF, 'Histograma do IMC Feminino')
+#plot_histogram(imcM, 'Histograma do IMC Masculino')
+#plot_histogram(imcp, 'Histograma do IMC com doenca cardiovascular')
+#plot_histogram(imca, 'Histograma do IMC sem doenca cardiovascular')
 plot_scatter(ap_lo, ap_hi, 'Grafico de dispersao: Diastolica x Sistolica Total')    
