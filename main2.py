@@ -52,6 +52,9 @@ alco = data[:, 9].astype(int)
 active = data[:, 10].astype(int)
 cardio = data[:, 11].astype(int)
 
+ap_hi_novo = np.clip(ap_hi,0,500)
+ap_lo_novo = np.clip(ap_lo,0,500)
+
 # List of discrete variables and their names
 discrete_variables = [gender, cholesterol, gluc, smoke, alco, active, cardio]
 nome_discretas = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active', 'cardio']
@@ -85,10 +88,16 @@ nome_continua = ['age', 'height', 'weight', 'ap_hi', 'ap_lo']
 # Display continuous variable histograms
 for i, variable in enumerate(continuous_variables):
     plt.figure()  # Create a new figure for each plot
-    plt.hist(variable, bins=100, density=True, alpha=0.6, color='g')
+    if nome_continua[i] == 'ap_hi':
+        plt.hist(ap_hi_novo, bins=100, density=True, alpha=0.6, color='g')
+    elif nome_continua[i]=='ap_lo':
+        plt.hist(ap_lo_novo, bins=100, density=True, alpha=0.6, color='g')
+    else:
+        plt.hist(variable, bins=100, density=True, alpha=0.6, color='g')
     plt.xlabel(nome_continua[i])
     plt.ylabel('Density')
     plt.title(f'{nome_continua[i]} Histogram')
+    plt.axvline(x=np.mean(variable), color='g', linestyle='--', label=f'Média: {np.mean(variable):.2f}')
     plt.show()
 
     mean = np.mean(variable)
