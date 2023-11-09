@@ -1,11 +1,45 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+    
+def calculate_statistics(data_file, sample_size, num_samples=100000):
+    # Read the CSV file into a pandas DataFrame
+    df = pd.read_csv(data_file, delimiter=';')
+    
+    # Initialize lists to store sample means, std devs, and variances
+    sample_means = []
+    sample_std_devs = []
+    sample_variances = []
+    
+    # Perform random sampling with replacement
+    for _ in range(num_samples):
+        sample = df.sample(n=sample_size, replace=True)
+        
+        # Calculate mean, std dev, and variance for the sample
+        sample_mean = sample.mean()
+        sample_std_dev = sample.std()
+        sample_variance = sample.var()
+        
+        # Append the results to the lists
+        sample_means.append(sample_mean)
+        sample_std_devs.append(sample_std_dev)
+        sample_variances.append(sample_variance)
+    
+    # Convert lists to pandas DataFrames
+    means_df = pd.DataFrame(sample_means)
+    std_devs_df = pd.DataFrame(sample_std_devs)
+    variances_df = pd.DataFrame(sample_variances)
 
-age, gender, height, weight, ap_hi, ap_lo, cholesterol, gluc, smoke, alco, active, cardio, imc, imcF, imcM, imcp, imca = ([] for _ in range(17))
-
+    overall_mean = means_df.mean()
+    overall_std_dev = std_devs_df.mean()
+    overall_variance = variances_df.mean()
+    
+    return means_df, std_devs_df, variances_df,overall_mean,overall_std_dev,overall_variance
+# Load data from CSV file
 data = np.genfromtxt('cardiovascular_data.csv', delimiter=';', skip_header=1)
 
-age = (data[:, 0] / 365).astype(int)
+# Extracting data columns
+age = (data[:, 0] / 365).astype(float)
 gender = data[:, 1].astype(int)
 height = data[:, 2].astype(int)
 weight = data[:, 3].astype(float)
@@ -18,16 +52,21 @@ alco = data[:, 9].astype(int)
 active = data[:, 10].astype(int)
 cardio = data[:, 11].astype(int)
 
+# List of discrete variables and their names
 discrete_variables = [gender, cholesterol, gluc, smoke, alco, active, cardio]
-nome_discretas = ['gender', 'cholesterol','gluc','smoke', 'alco', 'active','cardio']
-i=0
-for variable in discrete_variables:
+nome_discretas = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active', 'cardio']
+
+# Display discrete variable distributions
+for i, variable in enumerate(discrete_variables):
     unique_values, counts = np.unique(variable, return_counts=True)
     probabilities = counts / len(variable)
+    
+    plt.figure()  # Create a new figure for each plot
     plt.bar(unique_values, probabilities, label=f'{nome_discretas[i]} Distribution')
     plt.xticks(unique_values)
     plt.xlabel(nome_discretas[i])
     plt.ylabel('Probability')
+    plt.title(f'{nome_discretas[i]} Distribution')
     plt.show()
     
     mean = np.mean(variable)
@@ -38,13 +77,15 @@ for variable in discrete_variables:
     print(f'V[x]: {variance}')
     print(f'DP[x]: {std_dev}')
     print('\n')
-    i+=1
 
+# List of continuous variables and their names
 continuous_variables = [age, height, weight, ap_hi, ap_lo]
-nome_continua = ['age','height','weight','ap_hi','ap_lo']
-i=0
-for variable in continuous_variables:
-    plt.hist(variable, bins=30, density=True, alpha=0.6, color='g')
+nome_continua = ['age', 'height', 'weight', 'ap_hi', 'ap_lo']
+
+# Display continuous variable histograms
+for i, variable in enumerate(continuous_variables):
+    plt.figure()  # Create a new figure for each plot
+    plt.hist(variable, bins=100, density=True, alpha=0.6, color='g')
     plt.xlabel(nome_continua[i])
     plt.ylabel('Density')
     plt.title(f'{nome_continua[i]} Histogram')
@@ -58,4 +99,15 @@ for variable in continuous_variables:
     print(f'V[x]: {variance}')
     print(f'DP[x]: {std_dev}')
     print('\n')
-    i+=1
+
+data_file = 'cardiovascular_data.csv'
+means, std_devs, variances,means_geral,std_geral,var_geral = calculate_statistics(data_file,5)
+print("Media de cada amostra:")
+print(means)
+print("Desvio padrao de cada amostra:")
+print(std_devs)
+print("Variancia de cada amostra:")
+print(variances)
+print(f"Media das amostras:\n{means_geral}")
+print(f"devio padrao das amostras:\n{std_geral}")
+print(f"variancias das amostras:\n{var_geral}")

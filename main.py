@@ -52,7 +52,7 @@ for i, weight_value in enumerate(weight):
         print(weight_value, "Está fora do normal para peso.")
     if cardio[i] == 0:
         imca.append((weight_value) / ((height[i]/100) ** 2))
-    else:
+    else:   
         imcp.append((weight_value) / ((height[i]/100) ** 2))
 
 #plot_histogram(imc, 'Histograma do IMC total')
