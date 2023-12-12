@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import t,norm
 
-def calculate_statistics(data_file, sample_size, num_samples=100000):
+def calculate_statistics(data_file, sample_size, num_samples=100000, nivel_confianca = 0.95):
     # Read the CSV file into a pandas DataFrame
     df = pd.read_csv(data_file, delimiter=';')
     
+    #filtered_data = df[(df['gender'] == 1) & (df['smoke'] == 1) & (df['age'] > 16200)] #para 3.1.5
+
     # Initialize lists to store sample means, std devs, and variances
     sample_means = []
     sample_std_devs = []
@@ -13,7 +16,9 @@ def calculate_statistics(data_file, sample_size, num_samples=100000):
     
     # Perform random sampling with replacement
     for i in range(num_samples):
-        sample = df.sample(n=sample_size, replace=True)
+        sample = df.sample(n=sample_size, replace=True)  #filtered!! se quiser o todo usamos df
+        
+
         
         if i == 0:  # Plot histogram for the first sample only
             for column in sample.columns:
@@ -23,9 +28,35 @@ def calculate_statistics(data_file, sample_size, num_samples=100000):
                 plt.ylabel('Density')
                 plt.title(f'Histogram of {column} in the First Sample')
                 plt.show()
+            sample_mean = sample.mean()
+            sample_std_dev = sample.std()
+            sample_variance = sample.var()
+
+            filtrado = sample[(sample['gender'] == 2) & (sample['age'] > 18000) & (sample['smoke'] == 1)]        #3.1.7
+            proporcao = (len(filtrado))/sample_size
+            print(len(filtrado), proporcao)
+            z = norm.ppf(0.975) #alpha/2
+            margin_of_error = z * np.sqrt((proporcao * (1 - proporcao)) / sample_size)
+            confidence_interval = (proporcao - margin_of_error, proporcao + margin_of_error)
+
+            print(f"Intervalo de Confiança para a proporção: {confidence_interval}")
+            '''
+            critical_value = t.ppf((1 + nivel_confianca) / 2, df=sample_size - 1)
+
+            ap_hi_ci = [sample_mean['ap_hi'] - critical_value * sample_std_dev['ap_hi'] / np.sqrt(sample_size),
+                sample_mean['ap_hi'] + critical_value * sample_std_dev['ap_hi'] / np.sqrt(sample_size)]
+
+            ap_lo_ci = [sample_mean['ap_lo'] - critical_value * sample_std_dev['ap_lo'] / np.sqrt(sample_size),
+                sample_mean['ap_lo'] + critical_value * sample_std_dev['ap_lo'] / np.sqrt(sample_size)]
+
+            print(f"Intervalo de Confiança para ap_hi: {ap_hi_ci}")
+            print(f"Intervalo de Confiança para ap_lo: {ap_lo_ci}")
+            '''
+        
         sample['ap_hi'] = np.clip(sample['ap_hi'], None, 300)
         sample['ap_lo'] = np.clip(sample['ap_lo'], None, 300)
-        
+                # Calcular o intervalo de confiança para as médias de ap_hi e ap_lo
+
         # Calculate mean, std dev, and variance for the sample
         sample_mean = sample.mean()
         sample_std_dev = sample.std()
@@ -57,9 +88,32 @@ def calculate_statistics(data_file, sample_size, num_samples=100000):
         plt.ylabel('Density')
         plt.title(f'Histogram of {column} in Sample Means (100k samples)')
         plt.show()
+
+        # Calcular o intervalo de confiança para as médias de ap_hi e ap_lo
+    critical_value = t.ppf((1 + nivel_confianca) / 2, df=sample_size - 1)
+
+    ap_hi_ci = [overall_mean['ap_hi'] - critical_value * overall_mean_std['ap_hi'] / np.sqrt(sample_size),
+                overall_mean['ap_hi'] + critical_value * overall_mean_std['ap_hi'] / np.sqrt(sample_size)]
+
+    ap_lo_ci = [overall_mean['ap_lo'] - critical_value * overall_mean_std['ap_lo'] / np.sqrt(sample_size),
+                overall_mean['ap_lo'] + critical_value * overall_mean_std['ap_lo'] / np.sqrt(sample_size)]
+
+    print(f"Intervalo de Confiança para ap_hi: {ap_hi_ci}")
+    print(f"Intervalo de Confiança para ap_lo: {ap_lo_ci}")
     
     return means_df, std_devs_df, variances_df,overall_mean,overall_std_dev,overall_variance,overall_mean_std,overall_std_std,overall_variance_std
 # Load data from CSV file
+
+df = pd.read_csv('cardiovascular_data.csv', delimiter=';')
+
+#filtered_data = df[(df['gender'] == 2) & (df['age'] > 18000)] #para 3.1.5
+#varamostra = filtered_data.var()
+# vari = varamostra['height']
+filtered_data = df[(df['gender'] == 2) & (df['age'] > 18000) & (df['smoke'] == 1)]
+proportion = len(filtered_data)/70000
+print(proportion)
+
+
 data = np.genfromtxt('cardiovascular_data.csv', delimiter=';', skip_header=1)
 
 # Extracting data columns
@@ -78,8 +132,8 @@ cardio = data[:, 11].astype(int)
 
 ap_hi_novo = np.clip(ap_hi,0,300)
 ap_lo_novo = np.clip(ap_lo,0,300)
-
-
+ 
+"""
 # List of discrete variables and their names
 discrete_variables = [gender, cholesterol, gluc, smoke, alco, active, cardio]
 nome_discretas = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active', 'cardio']
@@ -129,9 +183,9 @@ for i, variable in enumerate(continuous_variables):
     print(f'V[x]: {variance}')
     print(f'DP[x]: {std_dev}')
     print('\n')
-
+"""
 data_file = 'cardiovascular_data.csv'
-means, std_devs, variances,means_geral,std_geral,var_geral,means_std,std_std,ver = calculate_statistics(data_file,35)
+means, std_devs, variances,means_geral,std_geral,var_geral,means_std,std_std,ver = calculate_statistics(data_file,300)
 print("Media de cada amostra:")
 print(means)
 print("Desvio padrao de cada amostra:")
