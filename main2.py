@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.stats import t,norm
+from scipy.stats import t,norm,chi2,ttest_ind, f_oneway, chi2_contingency
 
 def calculate_statistics(data_file, sample_size, num_samples=100000, nivel_confianca = 0.95):
     # Read the CSV file into a pandas DataFrame
     df = pd.read_csv(data_file, delimiter=';')
-    
+    filtrado = df[(df['cardio'] ==1)]
     #filtered_data = df[(df['gender'] == 1) & (df['smoke'] == 1) & (df['age'] > 16200)] #para 3.1.5
 
     # Initialize lists to store sample means, std devs, and variances
@@ -16,22 +16,31 @@ def calculate_statistics(data_file, sample_size, num_samples=100000, nivel_confi
     
     # Perform random sampling with replacement
     for i in range(num_samples):
-        sample = df.sample(n=sample_size, replace=True)  #filtered!! se quiser o todo usamos df
+        sample = filtrado.sample(n=sample_size, replace=True)  #filtered!! se quiser o todo usamos df
         
 
         
         if i == 0:  # Plot histogram for the first sample only
-            for column in sample.columns:
-                plt.figure()
-                plt.hist(sample[column], bins=15, density=True, alpha=0.6)
-                plt.xlabel(column)
-                plt.ylabel('Density')
-                plt.title(f'Histogram of {column} in the First Sample')
-                plt.show()
+            #for column in sample.columns:
+            #    plt.figure()
+            #    plt.hist(sample[column], bins=15, density=True, alpha=0.6)
+            #    plt.xlabel(column)
+            #    plt.ylabel('Density')
+            #    plt.title(f'Histogram of {column} in the First Sample')
+            #    plt.show()
             sample_mean = sample.mean()
             sample_std_dev = sample.std()
             sample_variance = sample.var()
+            
+            n = 45
+            chi2_lower = chi2.ppf(0.05/2, df=n-1)
+            chi2_upper = chi2.ppf(0.95/2, df=n-1)
 
+            # Intervalo de confiança para a variância
+            confidence_interval = ((n-1) * sample_variance['weight'] / chi2_upper, (n-1) * sample_variance['weight'] / chi2_lower)
+
+            #print(f"Intervalo de Confiança para a Variância: {confidence_interval}\n{sample_variance['weight']}")
+            '''
             filtrado = sample[(sample['gender'] == 2) & (sample['age'] > 18000) & (sample['smoke'] == 1)]        #3.1.7
             proporcao = (len(filtrado))/sample_size
             print(len(filtrado), proporcao)
@@ -40,7 +49,8 @@ def calculate_statistics(data_file, sample_size, num_samples=100000, nivel_confi
             confidence_interval = (proporcao - margin_of_error, proporcao + margin_of_error)
 
             print(f"Intervalo de Confiança para a proporção: {confidence_interval}")
-            '''
+            
+            
             critical_value = t.ppf((1 + nivel_confianca) / 2, df=sample_size - 1)
 
             ap_hi_ci = [sample_mean['ap_hi'] - critical_value * sample_std_dev['ap_hi'] / np.sqrt(sample_size),
@@ -102,17 +112,90 @@ def calculate_statistics(data_file, sample_size, num_samples=100000, nivel_confi
     print(f"Intervalo de Confiança para ap_lo: {ap_lo_ci}")
     
     return means_df, std_devs_df, variances_df,overall_mean,overall_std_dev,overall_variance,overall_mean_std,overall_std_std,overall_variance_std
-# Load data from CSV file
+
+def test_proporcao_alcool(data_file, sample_size=300, alpha=0.05):
+    # Leitura do CSV
+    df = pd.read_csv(data_file, delimiter=';')
+    filtrado = df[(df['alco'] == 1)]
+    # Amostragem aleatória
+    sample = filtrado.sample(n=sample_size, replace=True)
+    
+    # Filtragem por gênero
+    homens = sample[sample['gender'] == 2]['alco']
+    mulheres = sample[sample['gender'] == 1]['alco']
+    
+    # 4.
+    p_homens = len(homens)/sample_size       
+    p_mulheres = len(mulheres)/sample_size
+    print(f"Proporcao homens: {p_homens}\nProporcao mulheres: {p_mulheres}\n{len(homens)} {len(mulheres)}")
+    
+    z_score = (p_homens - p_mulheres) / np.sqrt(((p_homens * (1 - p_homens))/len(homens)) + ((p_mulheres * (1 - p_mulheres))/len(mulheres)))
+    
+    p_value = 1 - norm.cdf(z_score)
+    print(f"Valor p= {p_value}")
+
+    # 5. Decisao
+    reject_null = p_value < alpha
+    
+    # 6. Conclua o teste com base nas evidências da amostra
+    if reject_null:
+        print("Rejeitamos a hipótese nula.")
+        print("Há evidências de que a proporção de homens que ingerem bebida alcoólica é maior que a de mulheres.")
+    else:
+        print("Não rejeitamos a hipótese nula.")
+        print("Não há evidências suficientes para afirmar que a proporção de homens que ingerem bebida alcoólica é maior que a de mulheres.")
+
+def test_cardio_weight(data_file, alpha=0.05):
+    # Leitura do CSV
+    df = pd.read_csv(data_file, delimiter=';')
+    
+    # Filtragem por doenças cardiovasculares
+    com_cardio = df[df['cardio'] == 1]['weight']
+    sem_cardio = df[df['cardio'] == 0]['weight']
+    
+    # Teste de Diferença de Médias (t-test)
+    t_stat, p_value_mean = ttest_ind(com_cardio, sem_cardio, equal_var=False)
+    
+    # Teste de Diferença de Variâncias (F-test)
+    f_stat, p_value_var = f_oneway(com_cardio, sem_cardio)
+    
+    # Teste de Diferença de Proporções (Chi-square)
+    contingency_table = pd.crosstab(df['cardio'], df['weight'])
+    chi2_stat, p_value_prop, _, _ = chi2_contingency(contingency_table)
+    
+    # Decisões com base nos valores p
+    reject_mean = p_value_mean < alpha
+    reject_var = p_value_var < alpha
+    reject_prop = p_value_prop < alpha
+    
+    # Resultados
+    print("Teste de Diferença de Médias:")
+    print(f"T-Stat: {t_stat}")
+    print(f"Valor-P: {p_value_mean}")
+    print("Rejeitamos a hipótese nula." if reject_mean else "Não rejeitamos a hipótese nula.")
+    print("\nTeste de Diferença de Variâncias:")
+    print(f"F-Stat: {f_stat}")
+    print(f"Valor-P: {p_value_var}")
+    print("Rejeitamos a hipótese nula." if reject_var else "Não rejeitamos a hipótese nula.")
+    print("\nTeste de Diferença de Proporções:")
+    print(f"Chi2-Stat: {chi2_stat}")
+    print(f"Valor-P: {p_value_prop}")
+    print("Rejeitamos a hipótese nula." if reject_prop else "Não rejeitamos a hipótese nula.")
+
+
 
 df = pd.read_csv('cardiovascular_data.csv', delimiter=';')
 
 #filtered_data = df[(df['gender'] == 2) & (df['age'] > 18000)] #para 3.1.5
 #varamostra = filtered_data.var()
 # vari = varamostra['height']
-filtered_data = df[(df['gender'] == 2) & (df['age'] > 18000) & (df['smoke'] == 1)]
-proportion = len(filtered_data)/70000
-print(proportion)
-
+#filtered_data = df[(df['gender'] == 2) & (df['age'] > 18000) & (df['smoke'] == 1)] #para 3.1.6
+#proportion = len(filtered_data)/70000
+#print(proportion)
+filtered_data = df[(df['cardio'] ==1)]
+varamostra = filtered_data.var()
+vari = varamostra['weight']
+#print(vari)
 
 data = np.genfromtxt('cardiovascular_data.csv', delimiter=';', skip_header=1)
 
@@ -185,7 +268,10 @@ for i, variable in enumerate(continuous_variables):
     print('\n')
 """
 data_file = 'cardiovascular_data.csv'
-means, std_devs, variances,means_geral,std_geral,var_geral,means_std,std_std,ver = calculate_statistics(data_file,300)
+test_proporcao_alcool(data_file)
+test_cardio_weight(data_file)
+means, std_devs, variances,means_geral,std_geral,var_geral,means_std,std_std,ver = calculate_statistics(data_file,45)
+
 print("Media de cada amostra:")
 print(means)
 print("Desvio padrao de cada amostra:")
@@ -195,3 +281,4 @@ print(variances)
 print(f"Media das amostras:\n{means_geral}")
 print(f"devio padrao das amostras:\n{std_geral}")
 print(f"variancias das amostras:\n{var_geral}")
+
